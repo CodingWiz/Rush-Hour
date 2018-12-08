@@ -1,0 +1,11 @@
+https://stackoverflow.com/questions/16007724/javafx-dragboard-setcontent-interfering-with-setonmousedragged
+
+https://docs.oracle.com/javafx/2/events/DraggablePanelsExample.java.htm
+
+https://docs.oracle.com/javafx/2/drag_drop/jfxpub-drag_drop.htm
+
+https://stackoverflow.com/questions/38513111/javafx-how-to-drag-imageview-on-a-pane
+
+https://blog.idrsolutions.com/2015/05/how-to-implement-drag-and-drop-function-in-a-javafx-application/
+
+https://stackoverflow.com/questions/47517197/moving-an-image-using-mouse-drag-events?rq=1
