@@ -7,13 +7,9 @@ import Donnees.EnumOrientation;
 import Donnees.ImageVoiture;
 import Donnees.Voiture;
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -50,13 +46,18 @@ import javafx.stage.Stage;
 
 public class Jeu extends Stage implements Runnable {
 
-	private final BooleanProperty dragModeActiveProperty = new SimpleBooleanProperty(this, "dragModeActive", true);
+	// private final BooleanProperty dragModeActiveProperty = new
+	// SimpleBooleanProperty(this, "dragModeActive", true);
 
 	private final String strPathFichiersImages = "Fichiers" + System.getProperty("file.separator") + "Images"
 			+ System.getProperty("file.separator");
 
+	private HBox hBoxPrincipal;
+
 	private final int intPosXInitial = 49, intPosYInitial = 69, intTauxEspaceEntreVoitures = 71,
-			intTauxTranslation = 71;
+			intTauxTranslation = 72;
+
+	private double dblMousePressed, dblImageVoitureLayout;
 
 	private ImageView[] tbImageViewLogoGrille;
 	private ArrayList<Voiture> arrFichiersVoitures;
@@ -69,8 +70,6 @@ public class Jeu extends Stage implements Runnable {
 	private int[][] tbGrille;
 	private int intNbDeplacements;
 	private Label lblNbDeplacements;
-
-	private Voiture voitureRouge;
 
 	public Jeu(String strDifficulte, ImageView[] tbImageViewLogoGrille, ArrayList<Voiture> arrFichiersVoitures,
 			ArrayList<ImageVoiture> arrImagesVoitures) {
@@ -93,7 +92,7 @@ public class Jeu extends Stage implements Runnable {
 		tilePaneLogo.setPadding(new Insets(15));
 		tilePaneLogo.getChildren().add(tbImageViewLogoGrille[0]);
 
-		HBox hBoxPrincipal = new HBox();
+		hBoxPrincipal = new HBox();
 		// hBoxPrincipal.setAlignment(Pos.BASELINE_LEFT);
 		hBoxPrincipal.setSpacing(150);
 
@@ -114,7 +113,6 @@ public class Jeu extends Stage implements Runnable {
 	private VBox vBoxGrille() {
 		VBox vBoxGrille = new VBox();
 		vBoxGrille.setSpacing(15);
-		// vBoxGrille.setAlignment(Pos.BASELINE_LEFT);
 
 		Pane paneJeu = new Pane();
 
@@ -139,58 +137,92 @@ public class Jeu extends Stage implements Runnable {
 				EnumOrientation enumOrientationImage = imageVoiture.getEnumOrientation();
 
 				// pour la voiture fichier
-				String strCouleurFichier = arrFichiersVoitures.get(i).getStrCouleur(),
-						strTypeAutoFichier = arrFichiersVoitures.get(i).getStrLongueur().equals("2") ? "auto"
-								: "camion";
-				EnumOrientation enumOrientationFichier = arrFichiersVoitures.get(i).getEnumOrientation();
+				Voiture voiture = arrFichiersVoitures.get(i);
+				String strCouleurFichier = voiture.getStrCouleur(),
+						strTypeAutoFichier = voiture.getStrLongueur().equals("2") ? "auto" : "camion";
+				EnumOrientation enumOrientationFichier = voiture.getEnumOrientation();
 
 				// verifie si la voitureimage est egal au voiture fichier i
 				if (strCouleurImage.equals(strCouleurFichier) && enumOrientationImage == enumOrientationFichier
 						&& strTypeAutoImage.equals(strTypeAutoFichier)) {
-					arrFichiersVoitures.get(i).setIntNoVoiture(i + 1);
-
-					if (strCouleurFichier.equals("rouge"))
-						voitureRouge = arrFichiersVoitures.get(i);
+					voiture.setIntNoVoiture(i + 1);
 
 					// la position que va prendre l'image
-					int intImagePosX = Integer.parseInt(arrFichiersVoitures.get(i).getStrPosX())
-							* intTauxEspaceEntreVoitures + intPosXInitial + intTauxTranslation * 0,
-							intImagePosY = Integer.parseInt(arrFichiersVoitures.get(i).getStrPosY())
-									* intTauxEspaceEntreVoitures + intPosYInitial + intTauxTranslation * 0;
+					int intImagePosX = Integer.parseInt(voiture.getStrPosX()) * intTauxEspaceEntreVoitures
+							+ intPosXInitial + intTauxTranslation * 0,
+							intImagePosY = Integer.parseInt(voiture.getStrPosY()) * intTauxEspaceEntreVoitures
+									+ intPosYInitial + intTauxTranslation * 0;
 
 					// l'image
 					imageVoiture.getImageView().setLayoutX(intImagePosX);
 					imageVoiture.getImageView().setLayoutY(intImagePosY);
 
 					// remplissage de la grille 6x6 avec les voitures
-					if (enumOrientationFichier == EnumOrientation.H) // Orientation horizontale
+					if (enumOrientationFichier == EnumOrientation.H) { // Orientation horizontale
 						// reste des pos horizontales de la voiture
-						for (int a = 0; a < Integer.parseInt(arrFichiersVoitures.get(i).getStrLongueur()); a++)
-							tbGrille[Integer.parseInt(arrFichiersVoitures.get(i).getStrPosX()) + a] // posX
-							[Integer.parseInt(arrFichiersVoitures.get(i).getStrPosY())] = i + 1; // posY
-					else // Orientation verticale
-							// reste des pos verticales de la voiture
-						for (int b = 0; b < Integer.parseInt(arrFichiersVoitures.get(i).getStrLongueur()); b++)
-							tbGrille[Integer.parseInt(arrFichiersVoitures.get(i).getStrPosX())] // posX
-							[Integer.parseInt(arrFichiersVoitures.get(i).getStrPosY()) + b] = i + 1; // posY
+						for (int a = 0; a < Integer.parseInt(voiture.getStrLongueur()); a++)
+							tbGrille[Integer.parseInt(voiture.getStrPosX()) + a] // posX
+									[Integer.parseInt(voiture.getStrPosY())] = i + 1; // posY
 
-					// tbGrille[4][2] = 2; Pos que la voiture rouge doit se trouver pour avoir un
-					// combinaison gagnante. Il faut toutefois verifier [5][2] aussi
+						imageVoiture.getImageView().addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
+							// imageVoiture.getImageView().setTranslateX(e.getSceneX()-intImagePosX-intTauxEspaceEntreVoitures);
+							// System.out.println(e.getX() + " getX, " + e.getSceneX() + " sceneX, " +
+							// e.getScreenX() + " screen\n");
+							imageVoiture.getImageView()
+									.setLayoutX(dblImageVoitureLayout + e.getSceneX() - dblMousePressed);
 
-					ImageView imageView = (ImageView) makeDraggable(imageVoiture.getImageView());
-					imageVoiture.setImageView(imageView);
+							// tbGrille[4][2] = 2; Pos que la voiture rouge doit se trouver pour avoir un
+							// combinaison gagnante. Il faut toutefois verifier [5][2] aussi
+							// voiture rouge
+							if (imageVoiture.getStrCouleur().equals("rouge")) {
+								if (imageVoiture.getImageView().getLayoutX() == Double.parseDouble("380")) {
+									System.out.println("Bravo! Vous avez gagné");
+								}
+							}
+						});
+						imageVoiture.getImageView().addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
+							dblMousePressed = e.getSceneX();
+							dblImageVoitureLayout = imageVoiture.getImageView().getLayoutX();
+						});
+						imageVoiture.getImageView().setOnMouseReleased(e -> {
+							imageVoiture.getImageView().setLayoutX(
+									Math.round((imageVoiture.getImageView().getLayoutX() - 45) / 72) * 72 + 45);
+							intNbDeplacements++;
+							lblNbDeplacements.setText(Integer.toString(intNbDeplacements));
+						});
+					} else { // Orientation verticale
+								// reste des pos verticales de la voiture
+						for (int b = 0; b < Integer.parseInt(voiture.getStrLongueur()); b++)
+							tbGrille[Integer.parseInt(voiture.getStrPosX())] // posX
+									[Integer.parseInt(voiture.getStrPosY()) + b] = i + 1; // posY
+
+						/*
+						 * imageVoiture.getImageView().addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
+						 * //imageVoiture.getImageView().setTranslateY(e.getSceneY()-intImagePosY-
+						 * intTauxEspaceEntreVoitures); });
+						 */
+						imageVoiture.getImageView().addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
+							// imageVoiture.getImageView().setTranslateX(e.getSceneX()-intImagePosX-intTauxEspaceEntreVoitures);
+							// System.out.println(e.getX() + " getX, " + e.getSceneX() + " sceneX, " +
+							// e.getScreenX() + " screen\n");
+							imageVoiture.getImageView()
+									.setLayoutY(dblImageVoitureLayout + e.getSceneY() - dblMousePressed);
+						});
+						imageVoiture.getImageView().addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
+							dblMousePressed = e.getSceneY();
+							dblImageVoitureLayout = imageVoiture.getImageView().getLayoutY();
+						});
+						imageVoiture.getImageView().setOnMouseReleased(e -> {
+							imageVoiture.getImageView().setLayoutY(
+									Math.round((imageVoiture.getImageView().getLayoutY() - 70) / 72) * 72 + 70);
+							intNbDeplacements++;
+							lblNbDeplacements.setText(Integer.toString(intNbDeplacements));
+						});
+					}
 
 					// ajout des images de voiture dans l'interface grille
-					paneAutos.getChildren().add(imageView); // ajout des images
-
-					// ajout des eventhandlers aux imageviews des voitures pour les deplacer
-					/*
-					 * TranslateTransition transition = new TranslateTransition();
-					 * 
-					 * imageVoiture.getImageView().setOnMouseDragged(e -> {
-					 * 
-					 * });
-					 */
+					// imageVoiture.getImageView().setId(Integer.toString(voiture.getIntNoVoiture()));
+					paneAutos.getChildren().add(imageVoiture.getImageView());
 
 					break;
 				}
@@ -208,52 +240,39 @@ public class Jeu extends Stage implements Runnable {
 		return vBoxGrille;
 	}
 
-	private static final class DragContext {
-		public double mouseAnchorX;
-		public double mouseAnchorY;
-		public double initialTranslateX;
-		public double initialTranslateY;
-	}
+	/*
+	 * private static final class DragContext { public double mouseAnchorX; public
+	 * double mouseAnchorY; public double initialTranslateX; public double
+	 * initialTranslateY; }
+	 */
 
-	private Node makeDraggable(Node node) {
-		final DragContext dragContext = new DragContext();
-		final Group wrapGroup = new Group(node);
-
-		wrapGroup.addEventFilter(MouseEvent.ANY, new EventHandler<MouseEvent>() {
-			public void handle(final MouseEvent mouseEvent) {
-				if (dragModeActiveProperty.get()) {
-					// disable mouse events for all children
-					mouseEvent.consume();
-				}
-			}
-		});
-
-		wrapGroup.addEventFilter(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
-			public void handle(final MouseEvent mouseEvent) {
-				if (dragModeActiveProperty.get()) {
-					// remember initial mouse cursor coordinates
-					// and node position
-					dragContext.mouseAnchorX = mouseEvent.getX();
-					dragContext.mouseAnchorY = mouseEvent.getY();
-					dragContext.initialTranslateX = node.getTranslateX();
-					dragContext.initialTranslateY = node.getTranslateY();
-				}
-			}
-		});
-
-		wrapGroup.addEventFilter(MouseEvent.MOUSE_DRAGGED, new EventHandler<MouseEvent>() {
-			public void handle(final MouseEvent mouseEvent) {
-				if (dragModeActiveProperty.get()) {
-					// shift node from its initial position by delta
-					// calculated from mouse cursor movement
-					node.setTranslateX(dragContext.initialTranslateX + mouseEvent.getX() - dragContext.mouseAnchorX);
-					node.setTranslateY(dragContext.initialTranslateY + mouseEvent.getY() - dragContext.mouseAnchorY);
-				}
-			}
-		});
-
-		return wrapGroup;
-	}
+	/*
+	 * private ImageView makeDraggable(ImageView node) { final DragContext
+	 * dragContext = new DragContext(); final ImageView wrapGroup = node;
+	 * 
+	 * wrapGroup.addEventFilter(MouseEvent.ANY, new EventHandler<MouseEvent>() {
+	 * public void handle(final MouseEvent mouseEvent) { if
+	 * (dragModeActiveProperty.get()) { // disable mouse events for all children
+	 * mouseEvent.consume(); } } });
+	 * 
+	 * wrapGroup.addEventFilter(MouseEvent.MOUSE_PRESSED, new
+	 * EventHandler<MouseEvent>() { public void handle(final MouseEvent mouseEvent)
+	 * { if (dragModeActiveProperty.get()) { // remember initial mouse cursor
+	 * coordinates // and node position dragContext.mouseAnchorX =
+	 * mouseEvent.getX(); dragContext.mouseAnchorY = mouseEvent.getY();
+	 * dragContext.initialTranslateX = node.getTranslateX();
+	 * dragContext.initialTranslateY = node.getTranslateY(); } } });
+	 * 
+	 * wrapGroup.addEventFilter(MouseEvent.MOUSE_DRAGGED, new
+	 * EventHandler<MouseEvent>() { public void handle(final MouseEvent mouseEvent)
+	 * { if (dragModeActiveProperty.get()) { // shift node from its initial position
+	 * by delta // calculated from mouse cursor movement
+	 * node.setTranslateX(dragContext.initialTranslateX + mouseEvent.getX() -
+	 * dragContext.mouseAnchorX); node.setTranslateY(dragContext.initialTranslateY +
+	 * mouseEvent.getY() - dragContext.mouseAnchorY); } } });
+	 * 
+	 * return wrapGroup; }
+	 */
 
 	private VBox vBoxDroite() {
 		VBox vBoxDroite = new VBox();
@@ -269,6 +288,12 @@ public class Jeu extends Stage implements Runnable {
 		lblTemps.setFont(Font.font("Serif", FontWeight.BOLD, FontPosture.REGULAR, 50));
 		lblTemps.setTextFill(Color.GREEN);
 
+		intNbDeplacements = 0;
+		lblNbDeplacements = new Label("0");
+		lblNbDeplacements.setTextAlignment(TextAlignment.CENTER);
+		lblNbDeplacements.setAlignment(Pos.TOP_CENTER);
+		lblNbDeplacements.setFont(Font.font("Serif", FontWeight.BOLD, FontPosture.REGULAR, 50));
+
 		thread = new Thread(this);
 		thread.start();
 
@@ -282,13 +307,7 @@ public class Jeu extends Stage implements Runnable {
 		btnReinitialiser.setOnAction(t -> {
 			t.consume();
 
-			intTemps = 0;
-			lblTemps.setTextFill(Color.GREEN);
-
-			thread.interrupt();
-
-			thread = new Thread(this);
-			thread.start();
+			reinitialiser();
 
 			/*
 			 * System.out.println("Configuration initiale"); afficherGrille(tbGrille);
@@ -306,7 +325,7 @@ public class Jeu extends Stage implements Runnable {
 			retour();
 		});
 
-		vBoxDroite.getChildren().addAll(lblTemps, btnReinitialiser, btnRetour);
+		vBoxDroite.getChildren().addAll(lblTemps, lblNbDeplacements, btnReinitialiser, btnRetour);
 
 		return vBoxDroite;
 	}
@@ -362,6 +381,24 @@ public class Jeu extends Stage implements Runnable {
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
+		}
+	}
+
+	private void reinitialiser() {
+		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+		alert.setTitle("Confirmation");
+		alert.setHeaderText("Êtes-vous sûr de vouloir réinitialiser la grille ?");
+
+		Optional<ButtonType> result = alert.showAndWait();
+		if (result.get() == ButtonType.OK) {
+			intTemps = 0;
+			lblTemps.setTextFill(Color.GREEN);
+
+			thread.interrupt();
+
+			hBoxPrincipal.getChildren().clear();
+
+			hBoxPrincipal.getChildren().addAll(vBoxGrille(), vBoxDroite());
 		}
 	}
 
